@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2020 University of Washington. All rights reserved.
+#
+# author: M Radey (email: marad_at_uw.edu) with some code borrowed
+# from other sources
+
+# Requirements to run this script:
+#
+# A recent Linux or similar OS, Python 2.7+
+
+import os, sys, argparse, glob, gzip 
+from colorama import init as cinit
+from colorama import Fore, Back, Style
+
+# edit the paths below as necessary
+version     = "1.0.0"
+
+def do_args():
+    desc = "Filter polyfit style variant tab"
+    parser = argparse.ArgumentParser(prog=os.path.basename(__file__),\
+        description=desc)
+    parser.add_argument("readdir", help="specifies the directory with " +\
+        "the raw Fastq files")
+    parser.add_argument("logdir", help="specifies the directory with " +\
+        "the Cutadapt log files")
+    parser.add_argument("outfile", help="specifies the output file")
+    return parser.parse_args()
+
+def count_reads(fq):
+    n = ""
+    if fq.endswith('.gz'): n = gzip.open(fq)
+    else: n = open(fq)
+    lines = sum([1 for line in n])
+    rcount = int(lines / 4)
+    return rcount
+
+def get_read_counts(rdir, ldir):
+    print(Fore.CYAN + "Getting read counts...")
+    sys.stdout.write(Style.RESET_ALL)
+    fqs = glob.glob(rdir + "/*_1.fastq.gz")
+    if len(fqs) == 0: fqs = glob.glob(indir + "/*_1.fastq")
+    counts = {}
+    for fq in fqs:
+        bname, ext = os.path.splitext(os.path.basename(fq))
+        if bname.endswith('.fastq'): bname = ".".join(bname.split('.')[:-1])
+        if bname.endswith('_1'): bname = "_".join(bname.split('_')[:-1])
+        print(Fore.BLUE + bname)
+        sys.stdout.write(Style.RESET_ALL)
+        counts[bname] = count_reads(fq)
+    print(Fore.CYAN + "Getting filtered read counts...")
+    sys.stdout.write(Style.RESET_ALL)
+    fqs = glob.glob(ldir + "/filtered/*.fastq.gz")
+    filtcounts = {}
+    alleles = []
+    for fq in fqs:
+        bname, ext = os.path.splitext(os.path.basename(fq))
+        if bname.endswith('.fastq'): bname = ".".join(bname.split('.')[:-1])
+        if bname.endswith('.merged'): bname = ".".join(bname.split('.')[:-1])
+        allele = bname.split('_')[-1]
+        if not allele in alleles: alleles.append(allele)
+        bname = "_".join(bname.split('_')[:-1])
+        print(Fore.BLUE + bname + " " + allele)
+        sys.stdout.write(Style.RESET_ALL)
+        if not bname in filtcounts: filtcounts[bname] = {}
+        filtcounts[bname][allele] = count_reads(fq)
+    print(Fore.CYAN + "Getting pre-merged read counts...")
+    sys.stdout.write(Style.RESET_ALL)
+    fqs = glob.glob(ldir + "/*.premerged.fastq.gz")
+    pcounts = {}
+    for fq in fqs:
+        bname, ext = os.path.splitext(os.path.basename(fq))
+        if bname.endswith('.fastq'): bname = ".".join(bname.split('.')[:-1])
+        if bname.endswith('.premerged'):
+            bname = ".".join(bname.split('.')[:-1])
+        allele = bname.split('_')[-1]
+        bname = "_".join(bname.split('_')[:-1])
+        print(Fore.BLUE + bname + " " + allele)
+        sys.stdout.write(Style.RESET_ALL)
+        if not bname in pcounts: pcounts[bname] = {}
+        pcounts[bname][allele] = count_reads(fq)
+    print(Fore.CYAN + "Getting merged read counts...")
+    sys.stdout.write(Style.RESET_ALL)
+    fqs = glob.glob(ldir + "/*.merged.fastq.gz")
+    mcounts = {}
+    for fq in fqs:
+        bname, ext = os.path.splitext(os.path.basename(fq))
+        if bname.endswith('.fastq'): bname = ".".join(bname.split('.')[:-1])
+        if bname.endswith('.merged'):
+            bname = ".".join(bname.split('.')[:-1])
+        allele = bname.split('_')[-1]
+        bname = "_".join(bname.split('_')[:-1])
+        print(Fore.BLUE + bname + " " + allele)
+        sys.stdout.write(Style.RESET_ALL)
+        if not bname in mcounts: mcounts[bname] = {}
+        mcounts[bname][allele] = count_reads(fq)
+    return counts, filtcounts, pcounts, mcounts, sorted(alleles)
+
+def read_logs(indir):
+    print(Fore.CYAN + "Reading logs...")
+    sys.stdout.write(Style.RESET_ALL)
+    logs = glob.glob(indir + "/*.log")
+    rpro = {}
+    rwri = {}
+    for thislog in logs:
+        with open(thislog) as n:
+            name = ""
+            allele = ""
+            nreads = ""
+            nwrit = ""
+            for line in n:
+                if line.startswith('Command line parameters'):
+                    name = line.rstrip('\n').split(' ')[-1].split('/')[-1]
+                    name = name.split('.')[0]
+                    allele = name.split('_')[-1]
+                    name = "_".join(name.split('_')[:-1])
+                elif line.startswith('Total reads processed'):
+                    nreads = line.rstrip('\n').split()[-1]
+                    nreads = "".join(nreads.split(','))
+                elif line.startswith('Total written'):
+                    nwrit = line.rstrip('\n').split()[-2]
+                    nwrit = "".join(nreads.split(','))
+                    if not name in rpro: rpro[name] = {}
+                    rpro[name][allele] = nreads
+                    if not name in rwri: rwri[name] = {}
+                    rwri[name][allele] = nwrit
+                    break
+    return rpro, rwri
+
+def write_output(outfile, counts, filtcounts, pcounts, mcounts, rpro,\
+    rwri, alleles):
+    print(Fore.CYAN + "Writing output...")
+    sys.stdout.write(Style.RESET_ALL)
+    with open(outfile, 'w') as o:
+        for name in counts.keys():
+            o.write("\t".join([name, "raw", "all", str(counts[name])]) + "\n")
+            for allele in alleles:
+                if name in pcounts.keys():
+                    if allele in pcounts[name].keys():
+                        o.write("\t".join([name, "mer", allele,\
+                            str(pcounts[name][allele])]) + "\n")
+                    else: o.write("\t".join([name, "mer", allele, "0"]) + "\n")
+                else: o.write("\t".join([name, "mer", allele, "0"]) + "\n")
+                if name in rpro.keys():
+                    if allele in rpro[name].keys():
+                        o.write("\t".join([name, "pro", allele,\
+                            rpro[name][allele]]) + "\n")
+                    else: o.write("\t".join([name, "pro", allele, "0"]) + "\n")
+                else: o.write("\t".join([name, "pro", allele, "0"]) + "\n")
+                if name in rwri.keys():
+                    if allele in rwri[name].keys():
+                        o.write("\t".join([name, "wri", allele,\
+                            rwri[name][allele]]) + "\n")
+                    else: o.write("\t".join([name, "wri", allele, "0"]) + "\n")
+                else: o.write("\t".join([name, "wri", allele, "0"]) + "\n")
+                if name in mcounts.keys():
+                    if allele in mcounts[name].keys():
+                        o.write("\t".join([name, "trim", allele,\
+                            str(mcounts[name][allele])]) + "\n")
+                    else: o.write("\t".join([name, "trim", allele, "0"]) + "\n")
+                else: o.write("\t".join([name, "trim", allele, "0"]) + "\n")
+                if name in filtcounts.keys():
+                    if allele in filtcounts[name].keys():
+                        o.write("\t".join([name, "filt", allele,\
+                            str(filtcounts[name][allele])]) + "\n")
+                    else: o.write("\t".join([name, "filt", allele, "0"]) + "\n")
+                else: o.write("\t".join([name, "filt", allele, "0"]) + "\n")
+
+def main():
+    # setup
+    args = do_args()
+    args.readdir = os.path.abspath(args.readdir)
+    args.logdir = os.path.abspath(args.logdir)
+    args.outfile = os.path.abspath(args.outfile)
+    rc, fc, pc, mc, anames = get_read_counts(args.readdir, args.logdir)
+    lpro, lwri = read_logs(args.logdir)
+    write_output(args.outfile, rc, fc, pc, mc, lpro, lwri, anames)
+    print(Fore.CYAN + "Done.")
+    sys.stdout.write(Style.RESET_ALL)
+    return 0
+
+if __name__ == "__main__":
+   sys.exit(main())
+
