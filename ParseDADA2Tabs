@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2019 University of Washington. All rights reserved.
+#
+# author: M Radey (email: marad_at_uw.edu) with some code borrowed
+# from other sources
+
+# This script tested with:
+#
+# Uuntu 18.04, Python 2.7, BioPython 1.67
+
+import sys, os, argparse, re, tempfile, glob
+from subprocess import call, Popen, PIPE, STDOUT
+import pandas as pd
+from operator import itemgetter
+from Bio import SeqIO
+
+version     = "1.0.0"
+
+def do_args():
+    desc = "A tool for parsing ASV files from DADA2"
+    parser = argparse.ArgumentParser(prog=os.path.basename(__file__),\
+        version=version, description=desc)
+    parser.add_argument("indir", help="specifies the input file directory")
+    parser.add_argument("inpre", help="specifies the input file prefix " +\
+        "to be used to grab multiple DADA2 ASV files")
+    parser.add_argument("insuf", help="specifies the input file suffix " +\
+        "to be used to grab multiple DADA2 ASV files")
+    parser.add_argument("outfile", help="specifies the file where " +\
+        "you want the output to go")
+    return parser.parse_args()
+
+def combine_asvs(indir, inpre, insuf, outfile):
+    print("Combining ASV tables...")
+    infiles = glob.glob(indir + "/" + inpre + "*" + insuf)
+    alldfs = pd.DataFrame()
+    for infile in infiles:
+        df = pd.read_csv(infile, sep='\t', index_col=0)
+        df.rename(index=lambda x:x.split('_')[0], inplace=True)
+        if alldfs.empty:
+            alldfs = df
+            continue
+        alldfs = pd.merge(alldfs, df, how='outer', left_index=True,\
+            right_index=True)
+    alldfs = alldfs.fillna(0)
+    alldfs.rename(columns=lambda x:x.split('_')[0], inplace=True)
+    alldfs.to_csv(outfile, sep='\t', float_format='%.f')
+
+def main():
+    # setup
+    args = do_args()
+    args.indir = os.path.abspath(args.indir)
+    args.outfile = os.path.abspath(args.outfile)
+    combine_asvs(args.indir, args.inpre, args.insuf, args.outfile)
+    return 0
+
+if __name__ == "__main__":
+   sys.exit(main())
+

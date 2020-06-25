@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2020 University of Washington. All rights reserved.
+#
+# author: M Radey (email: marad_at_uw.edu) with some code borrowed
+# from other sources
+
+# This script tested with:
+#
+# Uuntu 18.04, Python 2.7, BioPython 1.67
+
+import sys, os, argparse, re, tempfile, glob
+import pandas as pd
+from subprocess import call, Popen, PIPE, STDOUT
+from operator import itemgetter
+from Bio import SeqIO
+
+version     = "1.0.0"
+
+def do_args():
+    desc = "A tool for parsing ASV files from DADA2"
+    parser = argparse.ArgumentParser(prog=os.path.basename(__file__),\
+        description=desc)
+    parser.add_argument("infile", help="specifies the file with " +\
+        "with the DADA2 ASV output")
+    parser.add_argument("refdir", help="specifies the directory with " +\
+        "the reference alleles to match with the ASVs")
+    parser.add_argument("outfile", help="specifies the file where " +\
+        "you want the output to go")
+    parser.add_argument("blastout", help="specifies the file where " +\
+        "you want the Blast output to go")
+    parser.add_argument("-f", "--filter", action="store_true",\
+        help="filter no_match columns in the output")
+    return parser.parse_args()
+
+def which(name):
+    paths = os.getenv("PATH").split(os.path.pathsep)
+    for path in paths:
+        full_path = path + os.sep + name
+        if os.path.exists(full_path):
+            return(full_path)
+    return 0
+
+def make_ref_file(refdir):
+    print("Scanning reference...")
+    rfile = "/tmp/tmpref.fa"
+    reffas = glob.glob(refdir + "/*.fa*")
+    with open(rfile, 'w') as o:
+        for reffa in reffas:
+            with open(reffa) as n:
+                for line in n: o.write(line)
+    reclen = {}
+    for rec in SeqIO.parse(rfile, 'fasta'): reclen[rec.id] = len(str(rec.seq))
+    return reclen
+
+def type_asvs(infile, ofile, reclen):
+    print("Typing ASVs...")
+    rfile = "/tmp/tmpref.fa"
+    blastn = which("blastn")
+    n = open(infile)
+    asvdict = {}
+    asvorder = []
+    blastres = []
+    # get the order of ASVs from DADA2 results
+    for asvseq in n.readline().rstrip().split('\t'):
+        if asvseq == "": continue
+        asvseq = re.sub('"', '', asvseq)
+        #print asvseq
+        asvdict[asvseq] = {}
+        asvorder.append(asvseq)
+    n.close()
+    # Blast each ASV against all alleles
+    for asvseq in asvdict.keys():
+        tfile = tempfile.NamedTemporaryFile('w+t', delete=False)
+        tfile.write(">test\n" + asvseq + "\n")
+        tfile.close()
+        args1 = [blastn, '-subject', rfile, '-query', tfile.name, '-outfmt',\
+            '6 sseqid pident length']
+        blastout = Popen(args1, stdout=PIPE, shell=False).communicate()[0][:-1]
+        lines = blastout.decode().split('\n')
+        # add each Blast result to blastres list and label with ASV
+        for line in lines:
+            fields = line.split('\t')
+            fields.append(asvseq)
+            blastres.append(fields)
+        os.remove(tfile.name)
+    # go through the Blast results and keep the best one for each ASV
+    best = {}
+    for asv in asvorder: best[asv] = ["no_match", '0.0', '0']
+    o = open(ofile, 'w')
+    for fields in blastres:
+        if len(fields) < 4: continue
+        o.write("\t".join(fields) + "\t" + str(reclen[fields[0]]) + "\n")
+        if not fields[3] in best: best[fields[3]] = ["", "0.0", "0"]
+        # if the identity and length is better than anything we've
+        # seen so far for this ASV
+        tident = float(re.sub("\*", "", best[fields[3]][1]))
+        if float(fields[1]) >= tident and \
+            int(fields[2]) >= int(best[fields[3]][2]) and \
+            int(fields[2]) <= reclen[fields[0]]:
+            best[fields[3]][1] = fields[1]
+            best[fields[3]][2] = fields[2]
+            best[fields[3]][0] = fields[0]
+            # mark imperfect matches
+            if not int(fields[2]) == reclen[fields[0]] or not \
+                float(fields[1]) == 100.0:
+                best[fields[3]][0] += "*"
+    o.close()
+    #print best
+    asvres = []
+    for asv in asvorder:
+        myres = best[asv]
+        myres.append(asv)
+        asvres.append(myres)
+    return asvres
+
+def asv_samples(infile, asvres, outfile):
+    print("Writing output...")
+    firstwrite = [""]
+    with open(outfile, 'w') as o:
+        # ['acs_53', '96.000', '180']
+        for fields in asvres: firstwrite.append(fields[0])
+        o.write("\t".join(firstwrite) + "\n")
+        with open(infile) as n:
+            firstline = True
+            savefirst = ""
+            for line in n:
+                if firstline == True:
+                    firstline = False
+                    savefirst = line.rstrip()
+                    savefirst = re.sub('"', '', savefirst)
+                    continue
+                elif line.startswith('"Kingdom"'): break
+                line = "\t".join(line.split('\t'))
+                line = re.sub('"', '', line)
+                o.write(line)
+            o.write("ASV" + savefirst + "\n")
+
+def filter_columns(outfile, filt):
+    if filt == False: return
+    bname, ext = os.path.splitext(outfile)
+    newname = bname + ".filt.tab"
+    df = pd.read_csv(outfile, sep='\t', index_col=0)
+    keepcols = []
+    for (colname, coldat) in df.iteritems():
+        if not "no_match" in colname: keepcols.append(colname)
+    newdf = df.loc[:, keepcols]
+    newdf.to_csv(newname, sep='\t')
+
+def main():
+    # setup
+    args = do_args()
+    args.infile = os.path.abspath(args.infile)
+    args.refdir = os.path.abspath(args.refdir)
+    args.outfile = os.path.abspath(args.outfile)
+    rlens = make_ref_file(args.refdir)
+    asvresults = type_asvs(args.infile, args.blastout, rlens)
+    asv_samples(args.infile, asvresults, args.outfile)
+    filter_columns(args.outfile, args.filter)
+    return 0
+
+if __name__ == "__main__":
+   sys.exit(main())
+

@@ -1,0 +1,120 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2019 University of Washington. All rights reserved.
+#
+# author: M Radey (email: marad_at_uw.edu) with some code borrowed
+# from other sources
+
+# Requirements to run this script:
+#
+# A recent Linux or similar OS, Python 2.7+
+
+import os, sys, argparse, re
+import pandas as pd
+
+# edit the paths below as necessary
+version     = "1.0.0"
+
+def do_args():
+    desc = "Filter our custom DADA2 ASV table format such that putative " +\
+        "novel alleles that closely resemble another allele signal in a " +\
+        "sample are discarded"
+    parser = argparse.ArgumentParser(prog=os.path.basename(__file__),\
+        version=version, description=desc)
+    parser.add_argument("infile", help="specifies the input file")
+    parser.add_argument("outfile", help="specifies the output file")
+    return parser.parse_args()
+
+def filter_columns(infile, outfile):
+    df = pd.read_csv(infile, sep='\t', index_col=0)
+    #print(df.columns)
+    #create a dictionary of column names for the first round of filtering
+    coldict = {}
+    for col in df.columns:
+        tcol1 = re.sub('\*', '', col)
+        tcol2 = re.sub('\.\d+$', '', tcol1)
+        if not tcol2 in coldict:
+            coldict[tcol2] = [col]
+        else: coldict[tcol2].append(col)
+    dropcols = []
+    # do the comparisons to determine which columns are dropped in
+    # the first round
+    for xcol in coldict.keys():
+        for thiscol in coldict[xcol]:
+            if not '*' in thiscol:
+                for thatcol in coldict[xcol]:
+                    if thiscol == thatcol: continue
+                    if '*' in thatcol:
+                        # now we're ready to answer, do we want to
+                        # keep thatcol?
+                        killthatcol = True
+                        for thisval, thatval in df[[thiscol,\
+                            thatcol]].values.tolist():
+                            if not thisval.isdigit() or not thatval.isdigit():
+                                continue
+                            #print(thiscol, thatcol, thisval, thatval)
+                            if (int(thatval) > int(thisval)) and \
+                                int(thatval) > 5:
+                                killthatcol = False
+                                break
+                        if killthatcol == True:
+                            #print("Kill: " + thatcol)
+                            dropcols.append(thatcol)
+    #create a dictionary of column names for the second round of filtering
+    coldict = {}
+    for col in df.columns:
+        if not '*' in col: continue
+        if col in dropcols: continue
+        tcol1 = re.sub('\.\d+$', '', col)
+        if not tcol1 in coldict:
+            coldict[tcol1] = [col]
+        else: coldict[tcol1].append(col)
+    # do the comparisons to determine which columns are dropped in
+    # the second round
+    for xcol in coldict.keys():
+        if len(coldict[xcol]) < 2: continue
+        #print(coldict[xcol])
+        for thiscol in coldict[xcol]:
+            for thatcol in coldict[xcol]:
+                if thiscol == thatcol: continue
+                # now we're ready to answer, do we want to
+                # keep thatcol?
+                killthatcol = True
+                for thisval, thatval in df[[thiscol,\
+                    thatcol]].values.tolist():
+                    if not thisval.isdigit() or not thatval.isdigit():
+                       continue
+                    #print(thiscol, thatcol, thisval, thatval)
+                    if (int(thatval) > int(thisval)) and \
+                        int(thatval) > 5:
+                        killthatcol = False
+                        break
+                if killthatcol == True:
+                    #print("Kill: " + thatcol)
+                    dropcols.append(thatcol)
+    # for the third round, filter columns where no value is >5
+    for col in df.columns:
+        #print(col)
+        highnum = 0
+        for thisval in df[col].values.tolist():
+            if not thisval.isdigit(): continue
+            if int(thisval) > highnum: highnum = int(thisval)
+            #print(thisval, str(highnum))
+        if highnum < 6: dropcols.append(col)
+    print("Dropping:")
+    print(dropcols)
+    df = df.drop(dropcols, axis=1)
+    df.to_csv(outfile, sep='\t')
+
+def main():
+    # setup
+    args = do_args()
+    args.outfile = os.path.abspath(args.outfile)
+    args.infile = os.path.abspath(args.infile)
+    filter_columns(args.infile, args.outfile)
+    print "Done."
+    return 0
+
+if __name__ == "__main__":
+   sys.exit(main())
+
