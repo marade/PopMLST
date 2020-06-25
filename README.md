@@ -1,3 +1,3 @@
-# PopMLST
+# Code and data pertaining to <i>PopMLST, a high-resolution method to detect pathogen strain-level diversity in clinical samples.</i>
 ![logo](/title.png)
-## Code and data pertaining to <i>PopMLST, a high-resolution method to detect pathogen strain-level diversity in clinical samples.</i>
+## Guide for Use
