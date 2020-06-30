@@ -23,15 +23,19 @@ This pipeline assumes your paired-end Fastq files are named like so:
 ### Run the Pipeline
 Code blah blah...
 
-    AmpliconPipeline3 PA-fq PA-cutadapt.tab PA-results
+    git clone https://github.com/marade/PopMLST.git
     
-    ParseDADA2Tabs ./ DADA2-SA out.tab D2-SA-combined.tab
+    cd PopMLST
     
-    ParseDADA2Tab -f D2-SA-combined.tab SA-ref D2-SA-table.tab D2-SA-blast.tab
+    python2 AmpliconPipeline3 PA-fq PA-cutadapt.tab PA-results
     
-    FilterDADA2Tab D2-SA-table.filt.tab D2-SA-table.filt2.tab
+    python2 ParseDADA2Tabs ./ DADA2-PA out.tab D2-PA-combined.tab
     
-    SortTabbyColName D2-SA-table.filt2.tab D2-SA-table.filt.sorted.tab
+    python2 ParseDADA2Tab -f D2-PA-combined.tab PA-ref D2-PA-table.tab D2-PA-blast.tab
+    
+    python2 FilterDADA2Tab D2-PA-table.filt.tab D2-PA-table.filt2.tab
+    
+    python2 SortTabbyColName D2-PA-table.filt2.tab D2-PA-table.filt.sorted.tab
     
     ExtractPopMLSTStats PA-fq PA-results PA-stats.tab
     
