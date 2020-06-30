@@ -3,9 +3,13 @@
 ## Guide for Use
 ### Prerequisites
 This software has been tested on the Linux operating system. It may be possible to adapt operating systems. The following software dependencies are required:
-* Python 3.x+
-* Python libraries: 
-* Cutadapt
+* Python 3.6.9
+* Python libraries: Biopython 1.76, tre
+* Cutadapt 2.8
+* VSEARCH 2.14.2+
+* pigz 2.4
+* R 3.6.2
+* DADA2 1.14
 ### Do Sequencing and Generate Fastq Files
 We assume you have generated your sequencing data in the manner described in the paper.
 ### Prepare Fastq Files
