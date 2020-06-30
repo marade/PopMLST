@@ -1,6 +1,11 @@
 # Data and methods for <i>PopMLST, a high-resolution method to detect pathogen strain-level diversity in clinical samples.</i>
 ![logo](/title.png)
 ## Guide for Use
+### Prerequisites
+This software has been tested on the Linux operating system. It may be possible to adapt operating systems. The following software dependencies are required:
+* Python 3.x+
+* Python libraries: 
+* Cutadapt
 ### Do Sequencing and Generate Fastq Files
 We assume you have generated your sequencing data in the manner described in the paper.
 ### Prepare Fastq Files
