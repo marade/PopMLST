@@ -10,6 +10,7 @@ This software has been tested on the Linux operating system. It may be possible 
 * pigz 2.4
 * R 3.6.2
 * DADA2 1.14
+
 We would like to use Python 3.x, but currently the tre library fails to build using 3.x versions.
 ### Do Sequencing and Generate Fastq Files
 We assume you have generated your sequencing data in the manner described in the paper.
