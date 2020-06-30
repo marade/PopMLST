@@ -13,11 +13,13 @@ This software has been tested on the Linux operating system. It may be possible 
 
 We would like to use Python 3.x, but currently the tre library fails to build using 3.x versions.
 ### Do Sequencing and Generate Fastq Files
-We assume you have generated your sequencing data in the manner described in the paper.
+We assume you have generated your sequencing data in roughly the manner described in the paper.
 ### Prepare Fastq Files
-Blah blah.
-### Install Prerequisites
-Blah blah.
+This pipeline assumes your paired-end Fastq files are named like so:
+
+    sampleX_1.fastq.gz sampleX_2.fastq.gz
+    sampleY_1.fastq.gz sampleY_2.fastq.gz
+
 ### Run the Pipeline
 Code blah blah...
 
