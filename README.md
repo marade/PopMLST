@@ -2,7 +2,7 @@
 ![logo](/title.png)
 ## Guide for Use
 ### Prerequisites
-This software has been tested on the Linux operating system. It may be possible to adapt operating systems. The following software dependencies are required:
+This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. The following software dependencies are required:
 * Python 2.7.17
 * Python libraries: Biopython 1.76, Pandas 1.0.1, colorama 0.3.7, tre 0.8.0
 * Cutadapt 2.8
