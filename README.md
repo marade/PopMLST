@@ -11,7 +11,7 @@ This software has been tested on the Linux operating system. It may be possible 
 * R 3.6.2
 * DADA2 1.14
 
-We would like to use Python 3.x, but currently the tre library fails to build using 3.x versions.
+These are the versions used for the paper, though other versions of the depencies may work. We would like to use Python 3.x instead of 2.7.17, but currently the tre library fails to build using 3.x versions.
 ### Do Sequencing and Generate Fastq Files
 We assume you have generated your sequencing data in roughly the manner described in the paper.
 ### Prepare Fastq Files
