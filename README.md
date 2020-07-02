@@ -37,6 +37,6 @@ Code blah blah...
     
     python2 SortTabbyColName D2-PA-table.filt2.tab D2-PA-table.filt.sorted.tab
     
-    ExtractPopMLSTStats PA-fq PA-results PA-stats.tab
+    python2 ExtractPopMLSTStats PA-fq PA-results PA-stats.tab
     
 Other stuff.
