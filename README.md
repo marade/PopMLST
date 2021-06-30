@@ -8,7 +8,7 @@ This software has been tested on the Linux operating system. It may be possible 
 * Cutadapt 2.8
 * VSEARCH 2.14.2
 * pigz 2.4
-* R 3.6.2
+* R 4.0.2
 * DADA2 1.14
 
 These are the versions used for the paper, though other versions of the dependencies may work.
