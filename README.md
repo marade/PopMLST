@@ -17,7 +17,7 @@ This software has been tested on the Linux operating system. It may be possible 
 
 These are the versions used for the paper, though other versions may work.
 
-The tre Python library hasn't been formally updated for Python 3.x, but community contributed patches have solved the problem. For your convenience we provide a version the tre library patched for Python 3.x. You can install it like this:
+The tre Python library hasn't been formally updated for Python 3.x, but community-contributed patches are available. For your convenience we provide a version of the tre library patched for Python 3.x. You can install it like this:
 
     $ wget https://github.com/marade/PopMLST/raw/master/tre-python3.tar.gz
     $ tar -xzvf tre-python3.tar.gz
