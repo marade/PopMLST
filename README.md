@@ -3,15 +3,20 @@
 ## Guide for Use
 ### Prerequisites
 This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. The following software dependencies are required:
-* Python 2.7.17
+* Python 3.6.9
 * Python libraries: Biopython 1.76, Pandas 1.0.1, colorama 0.3.7, tre 0.8.0
 * Cutadapt 2.8
-* VSEARCH 2.14.2+
+* VSEARCH 2.14.2
 * pigz 2.4
 * R 3.6.2
 * DADA2 1.14
 
-These are the versions used for the paper, though other versions of the depencies may work. We would like to use Python 3.x instead of 2.7.17, but currently the tre library fails to build using 3.x versions.
+These are the versions used for the paper, though other versions of the dependencies may work.
+
+The tre Python library hasn't been formally updated for Python 3.x, but community contributed patches have solved the problem. For your convenience we provide a version the tre library patched for Python 3.x. You can install it like this:
+
+    wget https://github.com/marade/PopMLST.git
+
 ### Do Sequencing and Generate Fastq Files
 We assume you have generated your sequencing data in roughly the manner described in the paper.
 ### Prepare Fastq Files
