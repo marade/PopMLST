@@ -3,15 +3,15 @@
 ## Guide for Use
 ### Prerequisites
 This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. The following software dependencies are required:
-* Python 3.8.2
-* Python libraries: Biopython 1.76, Pandas 1.0.24, colorama 0.3.7, tre 0.8.0
-* Cutadapt 2.8
-* VSEARCH 2.14.2
+* Python 3.8.5
+* Python libraries: Biopython 1.78, Pandas 1.2.5, colorama 0.4.3, tre 0.8.0
+* Cutadapt 3.2
+* VSEARCH 2.15.2
 * pigz 2.4
-* R 4.0.2
-* DADA2 1.14
+* R 4.0.4
+* DADA2 1.18.0
 
-These are the versions used for the paper, though other versions of the dependencies may work.
+These are the versions used for the paper, though other versions may work.
 
 The tre Python library hasn't been formally updated for Python 3.x, but community contributed patches have solved the problem. For your convenience we provide a version the tre library patched for Python 3.x. You can install it like this:
 
@@ -21,7 +21,7 @@ The tre Python library hasn't been formally updated for Python 3.x, but communit
     $ python3 setup.py install
 
 ### Do Sequencing and Generate Fastq Files
-We assume you have generated your sequencing data in roughly the manner described in the paper.
+We assume you have generated your sequencing data in roughly the manner described in the paper, using Illumina paired-end sequencing. We provide some example files for testing below.
 ### Prepare Fastq Files
 This pipeline assumes your paired-end Fastq files are named like so:
 
