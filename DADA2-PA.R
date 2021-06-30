@@ -1,58 +1,90 @@
 library(dada2)
 
-path <- "~/MLST-clinical-combined/PA-results"
+args <- commandArgs(trailingOnly = TRUE) # returns only arguments after --args
+path <- args[1]
+if (is.na(path)) {
+    message("Please provide directory command line argument.")
+    quit()
+}
+
 filtpath <- file.path(path, "filtered")
 
-genes <- c("acs", "aro", "gua", "mut", "nuo", "pps", "trp")
+d <- data.frame(
+  genes <- c("acs", "aro", "gua", "mut", "nuo", "pps", "trp"),
+  mins <- c(390, 498, 373, 421, 365, 358, 439),
+  maxs <- c(393, 498, 373, 447, 366, 371, 443))
 
-for (gene in genes) {
-    message(paste("====", gene, "===="))
-    output <- paste0("~/MLST-clinical-combined/DADA2-PA-", gene, "-out.tab")
-    fns <- list.files(path, pattern=paste0("_", gene, ".merged.fastq.gz"))
+for(i in seq_len(nrow(d))) {
+    message(paste("====", d[i,1], "===="))
+    output <- paste0("DADA2-PA-", d[i,1], "-out.tab")
+    ddspath <- paste0(d[i,1], "-dds.rds")
+    rdspath <- paste0(d[i,1], "-seqtab.rds")
+    fns <- list.files(path, pattern=paste0("_", d[i,1], ".merged.fastq.gz"))
+    numsamps = length(fns)
+    message(paste("number of samples:", numsamps))
+    sampcomp = numsamps %/% 3
+    #if (!(sampcomp >= 12)) {
+    #    sampcomp = 12
+    #}
+    message(paste("ignoreNNegatives:", sampcomp))
     head(fns)
 
     # filter and trim
     # for amplicon sequencing, leave out truncLen
     message("Filtering and trimming...")
     out <- filterAndTrim(file.path(path, fns), file.path(filtpath, fns),
-        maxN=0, minLen=360, maxLen=502, rm.phix=TRUE, maxEE=20.0,
+        maxN=0, minLen=d[i,2], rm.phix=TRUE, maxEE=20.0,
         compress=TRUE, multithread=TRUE, verbose=TRUE)
     head(out)
 
     # learn error rates
     message("Learning error rates...")
-    filts <- list.files(filtpath, pattern=paste0("_", gene,
+    filts <- list.files(filtpath, pattern=paste0("_", d[i,1],
         ".merged.fastq.gz"), full.names=TRUE)
     sample.names <- sapply(strsplit(basename(filts), "[.]"), `[`, 1)
     names(filts) <- sample.names
     set.seed(100)
-    err <- learnErrors(filts, nbases = 1e8, multithread=TRUE,
+    err <- learnErrors(filts, nbases=1e8, multithread=TRUE,
         randomize=TRUE, verbose=TRUE)
-    #plotErrors(err, nominalQ=TRUE)
+    ##print(err)
+    ##plotErrors(err, nominalQ=TRUE)
 
     # dereplication
     message("Dereplicating and inferring sequence variants...")
-    dds <- vector("list", length(sample.names))
-    names(dds) <- sample.names
-    for (sam in sample.names) {
-        cat("Processing:", sam, "\n")
-        derep <- derepFastq(filts[[sam]], verbose=TRUE)
-        dds[[sam]] <- dada(derep, err=err, multithread=TRUE,
-            selfConsist=TRUE, verbose=TRUE)
-    }
+    #dds <- vector("list", length(sample.names))
+    #names(dds) <- sample.names
+    #for (sam in sample.names) {
+    #    cat("Processing:", sam, "\n")
+    #    derep <- derepFastq(filts[[sam]], verbose=TRUE)
+    #    dds[[sam]] <- dada(derep, err=err, multithread=TRUE,
+    #        selfConsist=TRUE, verbose=TRUE, pool=FALSE)
+    #}
+    derep <- derepFastq(filts, verbose=TRUE)
+
+    # inference
+    dds <- dada(derep, err=err, multithread=TRUE,
+        selfConsist=TRUE, verbose=TRUE, pool=FALSE)
+    saveRDS(dds, ddspath)
     dds[[1]]
 
     # construct an amplicon sequence variant table (ASV) table
     message("Making sequence table...")
+    #seqtab <- readRDS(rdspath)
     seqtab <- makeSequenceTable(dds)
+    saveRDS(seqtab, rdspath)
     # Inspect distribution of sequence lengths
     table(nchar(getSequences(seqtab)))
 
     # remove chimeras
     message("Removing chimeras...")
+    #seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus",
+    #    minFoldParentOverAbundance=1.5, minParentAbundance=8,
+    #    allowOneOff=TRUE, minOneOffParentDistance=3, maxShift=16,
+    #    ignoreNNegatives=sampcomp, minSampleFraction=0.7,
+    #    multithread=TRUE, verbose=TRUE)
     seqtab.nochim <- removeBimeraDenovo(seqtab, method="per-sample",
-        minFoldParentOverAbundance = 1.5, minParentAbundance = 8,
-        allowOneOff = FALSE, minOneOffParentDistance = 4, maxShift = 16,
+        minFoldParentOverAbundance=1.5, minParentAbundance=8,
+        allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16,
         multithread=TRUE, verbose=TRUE)
     dim(seqtab.nochim)
     message("Fraction kept:")
