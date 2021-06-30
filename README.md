@@ -3,8 +3,8 @@
 ## Guide for Use
 ### Prerequisites
 This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. The following software dependencies are required:
-* Python 3.6.9
-* Python libraries: Biopython 1.76, Pandas 1.0.1, colorama 0.3.7, tre 0.8.0
+* Python 3.8.2
+* Python libraries: Biopython 1.76, Pandas 1.0.24, colorama 0.3.7, tre 0.8.0
 * Cutadapt 2.8
 * VSEARCH 2.14.2
 * pigz 2.4
