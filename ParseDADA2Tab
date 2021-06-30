@@ -86,15 +86,16 @@ def type_asvs(infile, ofile, reclen):
         os.remove(tfile.name)
     # go through the Blast results and keep the best one for each ASV
     best = {}
+    # initialize best dict with worst possible result
     for asv in asvorder: best[asv] = ["no_match", '0.0', '0']
     o = open(ofile, 'w')
     for fields in blastres:
         if len(fields) < 4: continue
         o.write("\t".join(fields) + "\t" + str(reclen[fields[0]]) + "\n")
         if not fields[3] in best: best[fields[3]] = ["", "0.0", "0"]
+        tident = float(re.sub("\*", "", best[fields[3]][1]))
         # if the identity and length is better than anything we've
         # seen so far for this ASV
-        tident = float(re.sub("\*", "", best[fields[3]][1]))
         if float(fields[1]) >= tident and \
             int(fields[2]) >= int(best[fields[3]][2]) and \
             int(fields[2]) <= reclen[fields[0]]:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2019 University of Washington. All rights reserved.
 #
@@ -18,7 +18,7 @@ version     = "1.0.0"
 def do_args():
     desc = "Rearrange columns in a tab delimited file in alphabetical order"
     parser = argparse.ArgumentParser(prog=os.path.basename(__file__),\
-        version=version, description=desc)
+        description=desc)
     parser.add_argument("infile", help="specifies the input file")
     parser.add_argument("outfile", help="specifies the output file")
     return parser.parse_args()
@@ -34,7 +34,7 @@ def main():
     args.outfile = os.path.abspath(args.outfile)
     args.infile = os.path.abspath(args.infile)
     reorder_columns(args.infile, args.outfile)
-    print "Done."
+    print("Done.")
     return 0
 
 if __name__ == "__main__":

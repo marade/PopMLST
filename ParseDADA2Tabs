@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2019 University of Washington. All rights reserved.
 #
@@ -20,7 +20,7 @@ version     = "1.0.0"
 def do_args():
     desc = "A tool for parsing ASV files from DADA2"
     parser = argparse.ArgumentParser(prog=os.path.basename(__file__),\
-        version=version, description=desc)
+        description=desc)
     parser.add_argument("indir", help="specifies the input file directory")
     parser.add_argument("inpre", help="specifies the input file prefix " +\
         "to be used to grab multiple DADA2 ASV files")

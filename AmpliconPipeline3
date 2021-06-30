@@ -14,14 +14,13 @@ import sys, os, argparse, glob, re, tempfile, gzip, fnmatch, tre
 from subprocess import call, Popen, PIPE, STDOUT
 from Bio import SeqIO
 from Bio.Seq import Seq
-from Bio.Alphabet import generic_dna
 
 version     = "1.0.0"
 
 def do_args():
     desc = "An amplicon sequencing pipeline"
     parser = argparse.ArgumentParser(prog=os.path.basename(__file__),\
-        version=version, description=desc)
+        description=desc)
     parser.add_argument("indir", help="specifies the input directory " +\
         "with the paired Fastq files")
     parser.add_argument("NBfasta", help="specifies a tab delimited file " +\
@@ -103,11 +102,11 @@ def join_reads(indir, outdir, nbseqs):
                 ofiles[fname][gene] = ""
                 rseq = str(Seq(rseq).reverse_complement())
                 if fq1.endswith(".gz"):
-                    f1handle = gzip.open(fq1)
-                    f2handle = gzip.open(fq2)
+                    f1handle = gzip.open(fq1, 'rt+')
+                    f2handle = gzip.open(fq2, 'rt+')
                 else:
-                    f1handle = open(fq1)
-                    f2handle = open(fq2)
+                    f1handle = open(fq1, 'rt+')
+                    f2handle = open(fq2, 'rt+')
                 r1recs = []
                 r2recs = []
                 nr1recs = []
@@ -168,7 +167,7 @@ def join_reads(indir, outdir, nbseqs):
                 #call(args1, shell=False)
                 logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
                         shell=False).communicate()[0][:-1]
-                with open(pmlog, 'w') as o: o.write(logout)
+                with open(pmlog, 'wb+') as o: o.write(logout)
                 with open(pmout, 'a') as o:
                     with open(tfile5.name) as n:
                         for line in n: o.write(line)
@@ -230,7 +229,7 @@ def optimize_trimming(outdir, nbseqs):
                 for r2 in SeqIO.parse(f2handle, "fastq"):
                     tmpqual = r2.letter_annotations['phred_quality'][:-bases]
                     r2.letter_annotations = {}
-                    r2.seq = Seq(str(r2.seq[:-bases]), generic_dna)
+                    r2.seq = Seq(str(r2.seq[:-bases]))
                     r2.letter_annotations['phred_quality'] = tmpqual
                     r2recs.append(r2)
                 SeqIO.write(r2recs, tfq2, "fastq")
@@ -241,10 +240,11 @@ def optimize_trimming(outdir, nbseqs):
                 #call(args1, shell=False)
                 logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
                         shell=False).communicate()[0][:-1]
-                for line in logout.split('\n'):
-                    if "Merged" in line:
-                        print(str(bases) + ' ' + line.lstrip())
-                with open(mlog, 'w') as o: o.write(logout)
+                for line in logout.split(b'\n'):
+                    if b"Merged" in line:
+                        print(str(str(bases).encode('utf8') +\
+                            b' ' + line.lstrip()))
+                with open(mlog, 'wb+') as o: o.write(logout)
             else:
                 args1 = [vsearch, '--fastqout', mout,\
                     '--fastq_mergepairs', fq1, '--reverse', fq2,\
@@ -253,7 +253,7 @@ def optimize_trimming(outdir, nbseqs):
                 #call(args1, shell=False)
                 logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
                         shell=False).communicate()[0][:-1]
-                with open(mlog, 'w') as o: o.write(logout)
+                with open(mlog, 'wb+') as o: o.write(logout)
             if os.path.exists(mout): results[bases] = os.path.getsize(mout)
             else: results[bases] = 0
         #print(results)
@@ -314,7 +314,7 @@ def optimize_trimming(outdir, nbseqs):
             for r2 in SeqIO.parse(f2handle, "fastq"):
                 tmpqual = r2.letter_annotations['phred_quality'][:-bases]
                 r2.letter_annotations = {}
-                r2.seq = Seq(str(r2.seq[:-bases]), generic_dna)
+                r2.seq = Seq(str(r2.seq[:-bases]))
                 r2.letter_annotations['phred_quality'] = tmpqual
                 r2recs.append(r2)
             SeqIO.write(r2recs, tfq2, "fastq")
@@ -326,9 +326,10 @@ def optimize_trimming(outdir, nbseqs):
             # log our results in case we want to inspect them
             logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
                     shell=False).communicate()[0][:-1]
-            for line in logout.split('\n'):
-                if "Merged" in line: print(str(bases) + ' ' + line.lstrip())
-            with open(mlog, 'w') as o: o.write(logout)
+            for line in logout.split(b'\n'):
+                if b"Merged" in line: print(str(bases).encode('utf8') +\
+                    b' ' + line.lstrip())
+            with open(mlog, 'wb+') as o: o.write(logout)
             results[bases] = os.path.getsize(mout)
             if results[bases] > results[highval]:
                 highval = bases
@@ -374,7 +375,7 @@ def trim_reads(outdir, nbseqs):
                     #print args1
                     logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
                         shell=False).communicate()[0][:-1]
-                    with open(logs, 'w') as o: o.write(logout)
+                    with open(logs, 'wb+') as o: o.write(logout)
                     os.rename(tout, pout)
                     os.rename(tfile.name, tout)
                     break

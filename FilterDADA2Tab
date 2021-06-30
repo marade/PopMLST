@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2019 University of Washington. All rights reserved.
 #
@@ -20,7 +20,7 @@ def do_args():
         "novel alleles that closely resemble another allele signal in a " +\
         "sample are discarded"
     parser = argparse.ArgumentParser(prog=os.path.basename(__file__),\
-        version=version, description=desc)
+        description=desc)
     parser.add_argument("infile", help="specifies the input file")
     parser.add_argument("outfile", help="specifies the output file")
     return parser.parse_args()
@@ -97,6 +97,7 @@ def filter_columns(infile, outfile):
         #print(col)
         highnum = 0
         for thisval in df[col].values.tolist():
+            #if not isinstance(thisval, float): continue
             if not thisval.isdigit(): continue
             if int(thisval) > highnum: highnum = int(thisval)
             #print(thisval, str(highnum))
@@ -112,7 +113,7 @@ def main():
     args.outfile = os.path.abspath(args.outfile)
     args.infile = os.path.abspath(args.infile)
     filter_columns(args.infile, args.outfile)
-    print "Done."
+    print("Done.")
     return 0
 
 if __name__ == "__main__":
