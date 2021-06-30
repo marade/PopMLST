@@ -15,10 +15,10 @@ These are the versions used for the paper, though other versions of the dependen
 
 The tre Python library hasn't been formally updated for Python 3.x, but community contributed patches have solved the problem. For your convenience we provide a version the tre library patched for Python 3.x. You can install it like this:
 
-    wget https://github.com/marade/PopMLST/raw/master/tre-python3.tar.gz
-    tar -xzvf tre-python3.tar.gz
-    cd tre-python/python3
-    python3 setup.py install
+    $ wget https://github.com/marade/PopMLST/raw/master/tre-python3.tar.gz
+    $ tar -xzvf tre-python3.tar.gz
+    $ cd tre-python/python3
+    $ python3 setup.py install
 
 ### Do Sequencing and Generate Fastq Files
 We assume you have generated your sequencing data in roughly the manner described in the paper.
@@ -31,20 +31,14 @@ This pipeline assumes your paired-end Fastq files are named like so:
 ### Run the Pipeline
 Code blah blah...
 
-    git clone https://github.com/marade/PopMLST.git
-    
-    cd PopMLST
-    
-    python3 AmpliconPipeline3 PA-fq PA-cutadapt.tab PA-results
-    
-    python3 ParseDADA2Tabs ./ DADA2-PA out.tab D2-PA-combined.tab
-    
-    python3 ParseDADA2Tab -f D2-PA-combined.tab PA-ref D2-PA-table.tab D2-PA-blast.tab
-    
-    python3 FilterDADA2Tab D2-PA-table.filt.tab D2-PA-table.filt2.tab
-    
-    python3 SortTabbyColName D2-PA-table.filt2.tab D2-PA-table.filt.sorted.tab
-    
-    python3 ExtractPopMLSTStats PA-fq PA-results PA-stats.tab
+    $ git clone https://github.com/marade/PopMLST.git
+    $ cd PopMLST
+    $ python3 AmpliconPipeline3 PA-fq PA-cutadapt.tab PA-results
+    $ Rscript DADA2-PA-y3.R PA-results
+    $ python3 ParseDADA2Tabs ./ DADA2-PA out.tab D2-PA-combined.tab
+    $ python3 ParseDADA2Tab -f D2-PA-combined.tab PA-ref D2-PA-table.tab D2-PA-blast.tab
+    $ python3 FilterDADA2Tab D2-PA-table.filt.tab D2-PA-table.filt2.tab
+    $ python3 SortTabbyColName D2-PA-table.filt2.tab D2-PA-table.filt.sorted.tab
+    $ python3 ExtractPopMLSTStats PA-fq PA-results PA-stats.tab
     
 Other stuff.
