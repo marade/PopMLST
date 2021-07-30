@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2020 University of Washington. All rights reserved.
+# This is the fourth script in the PopMLST pipeline. Run it
+# without arguments to get the usage. Please provide
+# proper attribution if you use this code.
 #
-# author: M Radey (email: marad_at_uw.edu) with some code borrowed
-# from other sources
-
-# This script tested with:
+# https://github.com/marade/PopMLST
 #
-# Uuntu 18.04, Python 2.7, BioPython 1.67
+# author: M Radey (email: marad_at_uw.edu)
 
 import sys, os, argparse, re, tempfile, glob
 import pandas as pd
+from shutil import which
 from subprocess import call, Popen, PIPE, STDOUT
 from operator import itemgetter
 from Bio import SeqIO
+from colorama import init as cinit
+from colorama import Fore, Back, Style
 
 version     = "1.0.0"
 
@@ -33,17 +35,10 @@ def do_args():
         help="filter no_match columns in the output")
     return parser.parse_args()
 
-def which(name):
-    paths = os.getenv("PATH").split(os.path.pathsep)
-    for path in paths:
-        full_path = path + os.sep + name
-        if os.path.exists(full_path):
-            return(full_path)
-    return 0
-
 def make_ref_file(refdir):
-    print("Scanning reference...")
-    rfile = "/tmp/tmpref.fa"
+    print(Fore.CYAN + "Scanning reference...")
+    sys.stdout.write(Style.RESET_ALL)
+    rfile = tempfile.NamedTemporaryFile('w+t', delete=False)
     reffas = glob.glob(refdir + "/*.fa*")
     with open(rfile, 'w') as o:
         for reffa in reffas:
@@ -51,12 +46,16 @@ def make_ref_file(refdir):
                 for line in n: o.write(line)
     reclen = {}
     for rec in SeqIO.parse(rfile, 'fasta'): reclen[rec.id] = len(str(rec.seq))
-    return reclen
+    return reclen, rfile.name
 
-def type_asvs(infile, ofile, reclen):
-    print("Typing ASVs...")
-    rfile = "/tmp/tmpref.fa"
+def type_asvs(infile, ofile, reclen, rfile):
+    print(Fore.CYAN + "Typing ASVs...")
+    sys.stdout.write(Style.RESET_ALL)
     blastn = which("blastn")
+    if blastn == None:
+        print(Fore.RED + "ERROR: Could not find blastn program.")
+        sys.stdout.write(Style.RESET_ALL)
+        sys.exit()
     n = open(infile)
     asvdict = {}
     asvorder = []
@@ -84,6 +83,7 @@ def type_asvs(infile, ofile, reclen):
             fields.append(asvseq)
             blastres.append(fields)
         os.remove(tfile.name)
+    os.remove(rfile)
     # go through the Blast results and keep the best one for each ASV
     best = {}
     # initialize best dict with worst possible result
@@ -116,7 +116,8 @@ def type_asvs(infile, ofile, reclen):
     return asvres
 
 def asv_samples(infile, asvres, outfile):
-    print("Writing output...")
+    print(Fore.CYAN + "Writing output...")
+    sys.stdout.write(Style.RESET_ALL)
     firstwrite = [""]
     with open(outfile, 'w') as o:
         # ['acs_53', '96.000', '180']
@@ -138,6 +139,8 @@ def asv_samples(infile, asvres, outfile):
             o.write("ASV" + savefirst + "\n")
 
 def filter_columns(outfile, filt):
+    print(Fore.CYAN + "Filtering columns...")
+    sys.stdout.write(Style.RESET_ALL)
     if filt == False: return
     bname, ext = os.path.splitext(outfile)
     newname = bname + ".filt.tab"
@@ -154,10 +157,12 @@ def main():
     args.infile = os.path.abspath(args.infile)
     args.refdir = os.path.abspath(args.refdir)
     args.outfile = os.path.abspath(args.outfile)
-    rlens = make_ref_file(args.refdir)
-    asvresults = type_asvs(args.infile, args.blastout, rlens)
+    rlens, reftmp = make_ref_file(args.refdir)
+    asvresults = type_asvs(args.infile, args.blastout, rlens, reftmp)
     asv_samples(args.infile, asvresults, args.outfile)
     filter_columns(args.outfile, args.filter)
+    print(Fore.CYAN + "Done.")
+    sys.stdout.write(Style.RESET_ALL)
     return 0
 
 if __name__ == "__main__":
