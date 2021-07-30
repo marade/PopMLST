@@ -1,15 +1,19 @@
+# This script largely modeled on examples from the DADA2 web site:
+# https://benjjneb.github.io/dada2
+
 library(dada2)
 
-args <- commandArgs(trailingOnly = TRUE) # returns only arguments after --args
+args <- commandArgs(trailingOnly = TRUE)
 path <- args[1]
 if (is.na(path)) {
-    message("Please provide directory command line argument.")
+    message("Input directory command line argument required.")
     quit()
 }
 
 filtpath <- file.path(path, "filtered")
 
 d <- data.frame(
+  # MLST loci parameters for Pseudomonas aeruginosa
   genes <- c("acs", "aro", "gua", "mut", "nuo", "pps", "trp"),
   mins <- c(390, 498, 373, 421, 365, 358, 439),
   maxs <- c(393, 498, 373, 447, 366, 371, 443))
@@ -22,11 +26,6 @@ for(i in seq_len(nrow(d))) {
     fns <- list.files(path, pattern=paste0("_", d[i,1], ".merged.fastq.gz"))
     numsamps = length(fns)
     message(paste("number of samples:", numsamps))
-    sampcomp = numsamps %/% 3
-    #if (!(sampcomp >= 12)) {
-    #    sampcomp = 12
-    #}
-    message(paste("ignoreNNegatives:", sampcomp))
     head(fns)
 
     # filter and trim
@@ -51,14 +50,6 @@ for(i in seq_len(nrow(d))) {
 
     # dereplication
     message("Dereplicating and inferring sequence variants...")
-    #dds <- vector("list", length(sample.names))
-    #names(dds) <- sample.names
-    #for (sam in sample.names) {
-    #    cat("Processing:", sam, "\n")
-    #    derep <- derepFastq(filts[[sam]], verbose=TRUE)
-    #    dds[[sam]] <- dada(derep, err=err, multithread=TRUE,
-    #        selfConsist=TRUE, verbose=TRUE, pool=FALSE)
-    #}
     derep <- derepFastq(filts, verbose=TRUE)
 
     # inference
@@ -77,11 +68,6 @@ for(i in seq_len(nrow(d))) {
 
     # remove chimeras
     message("Removing chimeras...")
-    #seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus",
-    #    minFoldParentOverAbundance=1.5, minParentAbundance=8,
-    #    allowOneOff=TRUE, minOneOffParentDistance=3, maxShift=16,
-    #    ignoreNNegatives=sampcomp, minSampleFraction=0.7,
-    #    multithread=TRUE, verbose=TRUE)
     seqtab.nochim <- removeBimeraDenovo(seqtab, method="per-sample",
         minFoldParentOverAbundance=1.5, minParentAbundance=8,
         allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16,
