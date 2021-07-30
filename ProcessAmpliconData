@@ -1,0 +1,406 @@
+#!/usr/bin/env python3
+
+# This is the first script in the PopMLST pipeline. Run it
+# without arguments to get the usage. Please provide
+# proper attribution if you use this code.
+#
+# https://github.com/marade/PopMLST
+#
+# author: M Radey (email: marad_at_uw.edu)
+
+import sys, os, argparse, glob, re, tempfile, gzip, fnmatch, tre
+from subprocess import call, Popen, PIPE, STDOUT
+from Bio import SeqIO
+from Bio.Seq import Seq
+from shutil import which
+from colorama import init as cinit
+from colorama import Fore, Back, Style
+
+version     = "1.0.0"
+
+def do_args():
+    desc = "PopMLST preprocessing pipeline"
+    parser = argparse.ArgumentParser(prog=os.path.basename(__file__),\
+        description=desc)
+    parser.add_argument("indir", help="specifies the input directory " +\
+        "with the paired Fastq files")
+    parser.add_argument("NBfasta", help="specifies a tab-delimited file " +\
+        "with non-biological sequences to trim from the 5' end of the " +\
+        "reads. Column one should have the gene name, column two the " +\
+        "read-one sequence to trim, and column three the read-two " +\
+        "sequence to trim")
+    parser.add_argument("outdir", help="specifies the file where " +\
+        "you want the output to go")
+    return parser.parse_args()
+
+def dir_check(outdir):
+    if not os.path.isdir(outdir): os.mkdir(outdir)
+
+# read the gene trimming configuration file
+def get_nbseqs(nbfile):
+    print(Fore.CYAN + "Reading trim configuration file...")
+    sys.stdout.write(Style.RESET_ALL)
+    nbseqs = []
+    with open(nbfile) as n:
+        for line in n:
+            gene, fseq, rseq, mseq = line.rstrip().split('\t')
+            rseq = str(Seq(rseq).reverse_complement())
+            nbseqs.append((gene, fseq, rseq, mseq))
+    return nbseqs
+
+# deconvolve reads, and then do a VSEARCH join for those where
+# the configuation file specifies it
+def join_reads(indir, outdir, nbseqs):
+    print(Fore.CYAN + "Deconvolving reads...")
+    sys.stdout.write(Style.RESET_ALL)
+    vsearch = which("vsearch")
+    if vsearch == None:
+        print(Fore.RED + "ERROR: VSEARCH not found.")
+        sys.stdout.write(Style.RESET_ALL)
+        sys.exit()
+    ofiles = {}
+    firstfq = glob.glob(indir + "/*_1.fastq*")
+    for fq1 in firstfq:
+        fq2 = re.sub("_1.fastq", "_2.fastq", fq1)
+        fname = os.path.basename("_".join(fq1.split("_")[:-1]))
+        ofiles[fname] = {}
+        print(Fore.BLUE + "Deconvolving " + fname + "...")
+        sys.stdout.write(Style.RESET_ALL)
+        for gene, fseq, rseq, mseq in nbseqs:
+            u1out = outdir + "/" + fname + "_" + gene + "_1.unmerged.fastq"
+            u2out = outdir + "/" + fname + "_" + gene + "_2.unmerged.fastq"
+            pmout = outdir + "/" + fname + "_" + gene + ".merged.fastq"
+            pmlog = outdir + "/" + fname + "_" + gene + ".merged.log"
+            pmgz = pmout + ".gz"
+            quals = len(mseq) * "I"
+            # if it looks like we've already done the deconvolution
+            # because output files exist, skip it
+            if os.path.exists(u1out) and os.path.exists(u2out):
+                print(Fore.YELLOW + "Files exist: " + u1out + " " + u2out)
+                sys.stdout.write(Style.RESET_ALL)
+            else:
+                ofiles[fname][gene] = ""
+                rseq = str(Seq(rseq).reverse_complement())
+                if fq1.endswith(".gz"):
+                    f1handle = gzip.open(fq1, 'rt+')
+                    f2handle = gzip.open(fq2, 'rt+')
+                else:
+                    f1handle = open(fq1, 'rt+')
+                    f2handle = open(fq2, 'rt+')
+                r1recs = []
+                r2recs = []
+                nr1recs = []
+                nr2recs = []
+                # fuzzy match the sequences using the tre module
+                # we allow for broad divergence, up to 25%, because
+                # we're not trying to filter anything yet.
+                fmerr = int(round(len(fseq) * 0.25))
+                rmerr = int(round(len(rseq) * 0.25))
+                fz = tre.Fuzzyness(maxerr = fmerr)
+                fs = tre.compile(fseq, tre.EXTENDED)
+                rz = tre.Fuzzyness(maxerr = rmerr)
+                rs = tre.compile(rseq, tre.EXTENDED)
+                for r1, r2 in zip(SeqIO.parse(f1handle, "fastq"),\
+                    SeqIO.parse(f2handle, "fastq")):
+                    fres = fs.search(str(r1.seq), fz)
+                    rres = rs.search(str(r2.seq), fz)
+                    # if both read pairs matched, keep them
+                    if fres and rres:
+                        r1recs.append(r1)
+                        r2recs.append(r2)
+                    # unmatched reads are kept in seperate files
+                    else:
+                        nr1recs.append(r1)
+                        nr2recs.append(r2)
+                f1handle.close()
+                f2handle.close()
+                tfile1 = tempfile.NamedTemporaryFile('w+t', delete=False)
+                tfile2 = tempfile.NamedTemporaryFile('w+t', delete=False)
+                tfile3 = tempfile.NamedTemporaryFile('w+t', delete=True)
+                tfile4 = tempfile.NamedTemporaryFile('w+t', delete=True)
+                SeqIO.write(r1recs, tfile1.name, "fastq")
+                SeqIO.write(r2recs, tfile2.name, "fastq")
+                SeqIO.write(nr1recs, tfile3.name, "fastq")
+                SeqIO.write(nr2recs, tfile4.name, "fastq")
+                fq1 = tfile3.name
+                fq2 = tfile4.name
+                os.rename(tfile1.name, u1out)
+                os.rename(tfile2.name, u2out)
+                # if there's no join specified in the configuration,
+                # we save the names for subsequent merging and move on
+                if mseq == "0":
+                    ofiles[fname][gene] = (u1out, u2out)
+                    continue
+            if mseq == "0": continue
+            # if we reach this point we have a locus configured
+            # for joined reads, so go ahead with that
+            elif os.path.exists(pmout) or os.path.exists(pmgz):
+                print(Fore.YELLOW + "At least one file exists: " +\
+                    pmout + " " + pmgz)
+                sys.stdout.write(Style.RESET_ALL)
+                continue
+            else:
+                print(Fore.BLUE + "Joining " + fname + " " +\
+                    gene + "...")
+                sys.stdout.write(Style.RESET_ALL)
+                ofiles[fname][gene] = pmout
+                tfile5 = tempfile.NamedTemporaryFile('w+t', delete=False)
+                args1 = [vsearch, '--fastqout', tfile5.name, '--fastq_join',\
+                    u1out, '--reverse', u2out, '--join_padgap',\
+                    mseq, '--join_padgapq', quals]
+                logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
+                        shell=False).communicate()[0][:-1]
+                with open(pmlog, 'wb+') as o: o.write(logout)
+                with open(pmout, 'a') as o:
+                    with open(tfile5.name) as n:
+                        for line in n: o.write(line)
+                os.remove(tfile5.name)
+    # we return a list of paired read files to be merged
+    return ofiles
+
+# find all *_2.unmerged.fastq files in the output directory
+def get_ufiles(mydir, myname):
+    myfiles = []
+    for root, dirnames, filenames in os.walk(mydir):
+        for filename in fnmatch.filter(filenames, '*' + myname +\
+            "_2.unmerged.fastq"):
+            myfiles.append(os.path.join(root, filename))
+    return myfiles
+
+# find all *.merged.fastq files in the output directory
+def get_mfiles(mydir):
+    myfiles = []
+    for root, dirnames, filenames in os.walk(mydir):
+        for filename in fnmatch.filter(filenames, '*.merged.fastq'):
+            myfiles.append(os.path.join(root, filename))
+    return myfiles
+
+# do read2 trimming and then if applicable, do a VSEARCH merge
+# on the trimmed reads
+def optimize_trimming(outdir, nbseqs):
+    print(Fore.BLUE + "Optimizing read2 trimming for best merge...")
+    sys.stdout.write(Style.RESET_ALL)
+    vsearch = which("vsearch")
+    if vsearch == None:
+        print(Fore.RED + "ERROR: VSEARCH not found.")
+        sys.stdout.write(Style.RESET_ALL)
+        sys.exit()
+    ourfiles = []
+    for gene, fseq, rseq, mseq in nbseqs:
+        ourfiles += get_ufiles(outdir, gene)
+    for fq2 in ourfiles:  
+        # for each set of reads we test different read2 trimming
+        # levels and try to find the one that will yield the most
+        # merged reads
+        fq1 = "_".join(fq2.split('_')[:-1]) + "_1.unmerged.fastq"
+        newname = "_".join(fq2.split('_')[:-1]) + ".merged.fastq"
+        newgz = newname + ".gz"
+        print(Fore.BLUE + "Optimizing " + fq1 + " " + fq2 + "...")
+        sys.stdout.write(Style.RESET_ALL)
+        if os.path.exists(newgz) or os.path.exists(newname):
+            print(Fore.YELLOW + "At least one file exists: " +\
+                newgz + " " + newname)
+            sys.stdout.write(Style.RESET_ALL)
+            continue
+        results = {}
+        # we try trimming between 0 - 150 bases
+        for x in range(151): results[x] = "N"
+        # we start with 0, 150, and 75 to get the shape of
+        # our results, which are assumed to have one peak
+        for bases in (0, 150, 75):
+            mout = "_".join(fq2.split('_')[:-1]) + "-trim" + str(bases) +\
+                ".merged.fastq"
+            mlog = "_".join(fq2.split('_')[:-1]) + "-trim" + str(bases) +\
+                ".merged.log"
+            if os.path.exists(mout):
+                results[bases] = os.path.getsize(mout)
+                continue
+            if bases > 0:
+                f2handle = open(fq2)
+                r2recs = []
+                tfq2 = "_".join(fq2.split('_')[:-1]) + "-trim" + str(bases) +\
+                    "_2.unmerged.fastq"
+                for r2 in SeqIO.parse(f2handle, "fastq"):
+                    tmpqual = r2.letter_annotations['phred_quality'][:-bases]
+                    r2.letter_annotations = {}
+                    r2.seq = Seq(str(r2.seq[:-bases]))
+                    r2.letter_annotations['phred_quality'] = tmpqual
+                    r2recs.append(r2)
+                SeqIO.write(r2recs, tfq2, "fastq")
+                args1 = [vsearch, '--fastqout', mout,\
+                    '--fastq_mergepairs', fq1, '--reverse', tfq2,\
+                    '--fastq_minmergelen', '350', '--fastq_minovlen', '0',
+                    '--fastq_maxdiffs', '20', '--fastq_allowmergestagger']
+                logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
+                        shell=False).communicate()[0][:-1]
+                for line in logout.split(b'\n'):
+                    if b"Merged" in line:
+                        print(str(str(bases).encode('utf8') +\
+                            b' ' + line.lstrip()))
+                with open(mlog, 'wb+') as o: o.write(logout)
+            else:
+                args1 = [vsearch, '--fastqout', mout,\
+                    '--fastq_mergepairs', fq1, '--reverse', fq2,\
+                    '--fastq_minmergelen', '350', '--fastq_minovlen', '0',
+                    '--fastq_maxdiffs', '20', '--fastq_allowmergestagger']
+                logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
+                        shell=False).communicate()[0][:-1]
+                with open(mlog, 'wb+') as o: o.write(logout)
+            if os.path.exists(mout): results[bases] = os.path.getsize(mout)
+            else: results[bases] = 0
+        #print(results)
+        # from here we progressively select the number of bases to trim 
+        # by repeatedly bisecting the two highest values
+        highval = 0
+        lowval = 0
+        if results[0] > results[75] and results[0] > results[150]:
+            # peak at 0
+            highval = 0
+            lowval = 75
+        if results[150] > results[75] and results[150] > results[0]:
+            # peak at 150
+            highval = 150
+            lowval = 75
+        if results[75] > results[0] and results[75] > results[150]:
+            # peak at 75
+            if results[0] > results[150]:
+                highval = 75
+                lowval = 0
+            elif results[0] < results[150]:
+                highval = 75
+                lowval = 150
+            else:
+                highval = 75
+                lowval = 0
+        found = False
+        bval = 0
+        # 'found' will be True, ending the loop, once we can no
+        # longer bisect to a new integer
+        while found == False:
+            bases = int((highval + lowval) / 2)
+            print(highval, lowval, bases)
+            if bases == highval or bases == lowval:
+                # we have gone as far as we can
+                bval = highval
+                found = True
+                continue
+            mout = "_".join(fq2.split('_')[:-1]) + "-trim" + str(bases) +\
+                ".merged.fastq"
+            mlog = "_".join(fq2.split('_')[:-1]) + "-trim" + str(bases) +\
+                ".merged.log"
+            if os.path.exists(mout):
+                results[bases] = os.path.getsize(mout)
+                if results[bases] > results[highval]:
+                    highval = bases
+                elif results[bases] < results[highval]:
+                    lowval = bases
+                else:
+                    # values are equal, so go with highval
+                    bval = highval
+                    found = True
+                continue
+            f2handle = open(fq2)
+            r2recs = []
+            tfq2 = "_".join(fq2.split('_')[:-1]) + "-trim" + str(bases) +\
+                "_2.unmerged.fastq"
+            for r2 in SeqIO.parse(f2handle, "fastq"):
+                tmpqual = r2.letter_annotations['phred_quality'][:-bases]
+                r2.letter_annotations = {}
+                r2.seq = Seq(str(r2.seq[:-bases]))
+                r2.letter_annotations['phred_quality'] = tmpqual
+                r2recs.append(r2)
+            SeqIO.write(r2recs, tfq2, "fastq")
+            args1 = [vsearch, '--fastqout', mout,\
+                '--fastq_mergepairs', fq1, '--reverse', tfq2,\
+                '--fastq_minmergelen', '350', '--fastq_minovlen', '0',
+                '--fastq_maxdiffs', '20', '--fastq_allowmergestagger']
+            #call(args1, shell=False)
+            # log our results in case we want to inspect them
+            logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
+                    shell=False).communicate()[0][:-1]
+            for line in logout.split(b'\n'):
+                if b"Merged" in line: print(str(bases).encode('utf8') +\
+                    b' ' + line.lstrip())
+            with open(mlog, 'wb+') as o: o.write(logout)
+            results[bases] = os.path.getsize(mout)
+            if results[bases] > results[highval]:
+                highval = bases
+            elif results[bases] < results[highval]:
+                lowval = bases
+            else:
+                # values are equal, so go with highval
+                bval = highval
+                found = True
+        # keep the best merged file, and clean up the rest
+        oldname = "_".join(fq2.split('_')[:-1]) + "-trim" + str(bval) +\
+            ".merged.fastq"
+        if os.path.exists(oldname): os.rename(oldname, newname)
+        # we saved the best one, so delete the rest
+        for myval in range(151):
+            delname = "_".join(fq2.split('_')[:-1]) + "-trim" + str(myval) +\
+                ".merged.fastq"
+            tfq2 = "_".join(fq2.split('_')[:-1]) + "-trim" + str(myval) +\
+                "_2.unmerged.fastq"
+            tfq1 = "_".join(fq2.split('_')[:-1]) + "-trim" + str(myval) +\
+                "_1.unmerged.fastq"
+            if os.path.exists(delname): os.remove(delname)
+            if os.path.exists(tfq1): os.remove(tfq1)
+            if os.path.exists(tfq2): os.remove(tfq2)
+
+# use Cutadapt to remove adapter sequences from the merged / joined reads
+def trim_reads(outdir, nbseqs):
+    cutadapt = which("cutadapt")
+    if cutadapt == None:
+        print(Fore.RED + "ERROR: cutadapt not found.")
+        sys.stdout.write(Style.RESET_ALL)
+        sys.exit()
+    pigz = which("pigz")
+    if pigz == None:
+        print(Fore.RED + "ERROR: pigz not found.")
+        sys.stdout.write(Style.RESET_ALL)
+        sys.exit()
+    merged = get_mfiles(outdir)
+    for tout in merged:
+        pout = ".".join(tout.split('.')[:-2]) + ".premerged.fastq"
+        trimmed, ext = os.path.splitext(tout)
+        logs = trimmed + ".cutadapt.log"
+        mytmp = trimmed + ".tmp"
+        if os.path.exists(tout):
+            for gene, fseq, rseq, mseq in nbseqs:
+                if tout.endswith('_' + gene + '.merged.fastq'):
+                    tfile = tempfile.NamedTemporaryFile('w+t', delete=False)
+                    args1 = [cutadapt, '--untrimmed-output', mytmp, '-a',
+                        '^' + fseq + "..." + rseq + '$', '-o', tfile.name,\
+                        tout]
+                    print(Fore.BLUE + "Running cutadapt for: " + tout)
+                    sys.stdout.write(Style.RESET_ALL)
+                    logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
+                        shell=False).communicate()[0][:-1]
+                    with open(logs, 'wb+') as o: o.write(logout)
+                    os.rename(tout, pout)
+                    os.rename(tfile.name, tout)
+                    break
+            os.remove(mytmp)
+            args1 = [pigz, tout]
+            call(args1, shell=False)
+            if os.path.exists(tout): os.remove(tout)
+            args1 = [pigz, pout]
+            call(args1, shell=False)
+            if os.path.exists(tout): os.remove(pout)
+
+def main():
+    # setup
+    args = do_args()
+    args.indir = os.path.abspath(args.indir)
+    args.NBfasta = os.path.abspath(args.NBfasta)
+    args.outdir = os.path.abspath(args.outdir)
+    dir_check(args.outdir)
+    NBseqs = get_nbseqs(args.NBfasta)
+    jreads = join_reads(args.indir, args.outdir, NBseqs)
+    optimize_trimming(args.outdir, NBseqs)
+    trim_reads(args.outdir, NBseqs)
+    return 0
+
+if __name__ == "__main__":
+   sys.exit(main())
+
