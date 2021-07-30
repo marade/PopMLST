@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2019 University of Washington. All rights reserved.
+# This is the third script in the PopMLST pipeline. Run it
+# without arguments to get the usage. Please provide
+# proper attribution if you use this code.
 #
-# author: M Radey (email: marad_at_uw.edu) with some code borrowed
-# from other sources
-
-# This script tested with:
+# https://github.com/marade/PopMLST
 #
-# Uuntu 18.04, Python 2.7, BioPython 1.67
+# author: M Radey (email: marad_at_uw.edu)
 
 import sys, os, argparse, re, tempfile, glob
 from subprocess import call, Popen, PIPE, STDOUT
 import pandas as pd
 from operator import itemgetter
 from Bio import SeqIO
+from colorama import init as cinit
+from colorama import Fore, Back, Style
 
 version     = "1.0.0"
 
 def do_args():
-    desc = "A tool for parsing ASV files from DADA2"
+    desc = "PopMLST tool for parsing ASV files from DADA2"
     parser = argparse.ArgumentParser(prog=os.path.basename(__file__),\
         description=desc)
     parser.add_argument("indir", help="specifies the input file directory")
@@ -31,7 +32,8 @@ def do_args():
     return parser.parse_args()
 
 def combine_asvs(indir, inpre, insuf, outfile):
-    print("Combining ASV tables...")
+    print(Fore.CYAN + "Combining ASV tables...")
+    sys.stdout.write(Style.RESET_ALL)
     infiles = glob.glob(indir + "/" + inpre + "*" + insuf)
     alldfs = pd.DataFrame()
     for infile in infiles:
@@ -52,6 +54,8 @@ def main():
     args.indir = os.path.abspath(args.indir)
     args.outfile = os.path.abspath(args.outfile)
     combine_asvs(args.indir, args.inpre, args.insuf, args.outfile)
+    print(Fore.CYAN + "Done.")
+    sys.stdout.write(Style.RESET_ALL)
     return 0
 
 if __name__ == "__main__":
