@@ -37,7 +37,7 @@ Code blah blah...
 
     $ git clone https://github.com/marade/PopMLST.git
     $ cd PopMLST
-    $ python3 AmpliconPipeline3 PA-fq PA-cutadapt.tab PA-results
+    $ python3 ProcessAmpliconData PA-fq PA-cutadapt.tab PA-results
     $ Rscript DADA2-PA-y3.R PA-results
     $ python3 ParseDADA2Tabs ./ DADA2-PA out.tab D2-PA-combined.tab
     $ python3 ParseDADA2Tab -f D2-PA-combined.tab PA-ref D2-PA-table.tab D2-PA-blast.tab
