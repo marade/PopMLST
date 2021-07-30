@@ -42,7 +42,7 @@ Code blah blah...
     $ python3 ParseDADA2Tabs ./ DADA2-PA out.tab D2-PA-combined.tab
     $ python3 ParseDADA2Tab -f D2-PA-combined.tab PA-ref D2-PA-table.tab D2-PA-blast.tab
     $ python3 FilterDADA2Tab D2-PA-table.filt.tab D2-PA-table.filt2.tab
-    $ python3 SortTabbyColName D2-PA-table.filt2.tab D2-PA-table.filt.sorted.tab
+    $ python3 SortColNames D2-PA-table.filt2.tab D2-PA-table.filt.sorted.tab
     $ python3 ExtractPopMLSTStats PA-fq PA-results PA-stats.tab
     
 Other stuff.
