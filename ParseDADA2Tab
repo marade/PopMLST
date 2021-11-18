@@ -40,7 +40,7 @@ def make_ref_file(refdir):
     sys.stdout.write(Style.RESET_ALL)
     rfile = tempfile.NamedTemporaryFile('w+t', delete=False)
     reffas = glob.glob(refdir + "/*.fa*")
-    with open(rfile, 'w') as o:
+    with open(rfile.name, 'w') as o:
         for reffa in reffas:
             with open(reffa) as n:
                 for line in n: o.write(line)
