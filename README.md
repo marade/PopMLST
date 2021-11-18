@@ -4,7 +4,7 @@
 ### Installation - Choose a Method:
 This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. We provide two different installation methods you can use for installation.
 #### Bioconda Method (preferred)
-We assume Bioconda is already properly configured and working.
+We assume Bioconda is already properly configured and working, per <a href="https://bioconda.github.io/user/install.html">the instuctions</a>.
 
     $ mamba create -y -n amplicon python=3.8 bioconductor-dada2 vsearch=2.14.0 blast pandas biopython cutadapt
     $ conda activate amplicon
