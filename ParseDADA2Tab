@@ -17,6 +17,8 @@ from Bio import SeqIO
 from colorama import init as cinit
 from colorama import Fore, Back, Style
 
+cinit(autoreset=True)
+
 version     = "1.0.0"
 
 def do_args():
@@ -36,8 +38,7 @@ def do_args():
     return parser.parse_args()
 
 def make_ref_file(refdir):
-    print(Fore.CYAN + "Scanning reference...")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Scanning reference...")
     rfile = tempfile.NamedTemporaryFile('w+t', delete=False)
     reffas = glob.glob(refdir + "/*.fa*")
     with open(rfile.name, 'w') as o:
@@ -49,12 +50,10 @@ def make_ref_file(refdir):
     return reclen, rfile.name
 
 def type_asvs(infile, ofile, reclen, rfile):
-    print(Fore.CYAN + "Typing ASVs...")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Typing ASVs...")
     blastn = which("blastn")
     if blastn == None:
         print(Fore.RED + "ERROR: Could not find blastn program.")
-        sys.stdout.write(Style.RESET_ALL)
         sys.exit()
     n = open(infile)
     asvdict = {}
@@ -116,8 +115,7 @@ def type_asvs(infile, ofile, reclen, rfile):
     return asvres
 
 def asv_samples(infile, asvres, outfile):
-    print(Fore.CYAN + "Writing output...")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Writing output...")
     firstwrite = [""]
     with open(outfile, 'w') as o:
         # ['acs_53', '96.000', '180']
@@ -139,8 +137,7 @@ def asv_samples(infile, asvres, outfile):
             o.write("ASV" + savefirst + "\n")
 
 def filter_columns(outfile, filt):
-    print(Fore.CYAN + "Filtering columns...")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Filtering columns...")
     if filt == False: return
     bname, ext = os.path.splitext(outfile)
     newname = bname + ".filt.tab"
@@ -161,8 +158,7 @@ def main():
     asvresults = type_asvs(args.infile, args.blastout, rlens, reftmp)
     asv_samples(args.infile, asvresults, args.outfile)
     filter_columns(args.outfile, args.filter)
-    print(Fore.CYAN + "Done.")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Done.")
     return 0
 
 if __name__ == "__main__":

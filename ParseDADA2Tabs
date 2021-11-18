@@ -16,6 +16,8 @@ from Bio import SeqIO
 from colorama import init as cinit
 from colorama import Fore, Back, Style
 
+cinit(autoreset=True)
+
 version     = "1.0.0"
 
 def do_args():
@@ -32,8 +34,7 @@ def do_args():
     return parser.parse_args()
 
 def combine_asvs(indir, inpre, insuf, outfile):
-    print(Fore.CYAN + "Combining ASV tables...")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Combining ASV tables...")
     infiles = glob.glob(indir + "/" + inpre + "*" + insuf)
     alldfs = pd.DataFrame()
     for infile in infiles:
@@ -54,8 +55,7 @@ def main():
     args.indir = os.path.abspath(args.indir)
     args.outfile = os.path.abspath(args.outfile)
     combine_asvs(args.indir, args.inpre, args.insuf, args.outfile)
-    print(Fore.CYAN + "Done.")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Done.")
     return 0
 
 if __name__ == "__main__":

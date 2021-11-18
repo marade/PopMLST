@@ -16,6 +16,8 @@ from shutil import which
 from colorama import init as cinit
 from colorama import Fore, Back, Style
 
+cinit(autoreset=True)
+
 version     = "1.0.0"
 
 def do_args():
@@ -38,8 +40,7 @@ def dir_check(outdir):
 
 # read the gene trimming configuration file
 def get_nbseqs(nbfile):
-    print(Fore.CYAN + "Reading trim configuration file...")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Reading trim configuration file...")
     nbseqs = []
     with open(nbfile) as n:
         for line in n:
@@ -51,12 +52,10 @@ def get_nbseqs(nbfile):
 # deconvolve reads, and then do a VSEARCH join for those where
 # the configuation file specifies it
 def join_reads(indir, outdir, nbseqs):
-    print(Fore.CYAN + "Deconvolving reads...")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Deconvolving reads...")
     vsearch = which("vsearch")
     if vsearch == None:
         print(Fore.RED + "ERROR: VSEARCH not found.")
-        sys.stdout.write(Style.RESET_ALL)
         sys.exit()
     ofiles = {}
     firstfq = glob.glob(indir + "/*_1.fastq*")
@@ -64,8 +63,7 @@ def join_reads(indir, outdir, nbseqs):
         fq2 = re.sub("_1.fastq", "_2.fastq", fq1)
         fname = os.path.basename("_".join(fq1.split("_")[:-1]))
         ofiles[fname] = {}
-        print(Fore.BLUE + "Deconvolving " + fname + "...")
-        sys.stdout.write(Style.RESET_ALL)
+        print(Fore.BLUE + Style.BRIGHT + "Deconvolving " + fname + "...")
         for gene, fseq, rseq, mseq in nbseqs:
             u1out = outdir + "/" + fname + "_" + gene + "_1.unmerged.fastq"
             u2out = outdir + "/" + fname + "_" + gene + "_2.unmerged.fastq"
@@ -77,7 +75,6 @@ def join_reads(indir, outdir, nbseqs):
             # because output files exist, skip it
             if os.path.exists(u1out) and os.path.exists(u2out):
                 print(Fore.YELLOW + "Files exist: " + u1out + " " + u2out)
-                sys.stdout.write(Style.RESET_ALL)
             else:
                 ofiles[fname][gene] = ""
                 rseq = str(Seq(rseq).reverse_complement())
@@ -137,12 +134,10 @@ def join_reads(indir, outdir, nbseqs):
             elif os.path.exists(pmout) or os.path.exists(pmgz):
                 print(Fore.YELLOW + "At least one file exists: " +\
                     pmout + " " + pmgz)
-                sys.stdout.write(Style.RESET_ALL)
                 continue
             else:
-                print(Fore.BLUE + "Joining " + fname + " " +\
+                print(Fore.BLUE + Style.BRIGHT + "Joining " + fname + " " +\
                     gene + "...")
-                sys.stdout.write(Style.RESET_ALL)
                 ofiles[fname][gene] = pmout
                 tfile5 = tempfile.NamedTemporaryFile('w+t', delete=False)
                 args1 = [vsearch, '--fastqout', tfile5.name, '--fastq_join',\
@@ -178,12 +173,10 @@ def get_mfiles(mydir):
 # do read2 trimming and then if applicable, do a VSEARCH merge
 # on the trimmed reads
 def optimize_trimming(outdir, nbseqs):
-    print(Fore.BLUE + "Optimizing read2 trimming for best merge...")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.BLUE + Style.BRIGHT + "Optimizing read2 trimming for best merge...")
     vsearch = which("vsearch")
     if vsearch == None:
         print(Fore.RED + "ERROR: VSEARCH not found.")
-        sys.stdout.write(Style.RESET_ALL)
         sys.exit()
     ourfiles = []
     for gene, fseq, rseq, mseq in nbseqs:
@@ -195,12 +188,10 @@ def optimize_trimming(outdir, nbseqs):
         fq1 = "_".join(fq2.split('_')[:-1]) + "_1.unmerged.fastq"
         newname = "_".join(fq2.split('_')[:-1]) + ".merged.fastq"
         newgz = newname + ".gz"
-        print(Fore.BLUE + "Optimizing " + fq1 + " " + fq2 + "...")
-        sys.stdout.write(Style.RESET_ALL)
+        print(Fore.BLUE + Style.BRIGHT + "Optimizing " + fq1 + " " + fq2 + "...")
         if os.path.exists(newgz) or os.path.exists(newname):
             print(Fore.YELLOW + "At least one file exists: " +\
                 newgz + " " + newname)
-            sys.stdout.write(Style.RESET_ALL)
             continue
         results = {}
         # we try trimming between 0 - 150 bases
@@ -233,10 +224,8 @@ def optimize_trimming(outdir, nbseqs):
                     '--fastq_maxdiffs', '20', '--fastq_allowmergestagger']
                 logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
                         shell=False).communicate()[0][:-1]
-                for line in logout.split(b'\n'):
-                    if b"Merged" in line:
-                        print(str(str(bases).encode('utf8') +\
-                            b' ' + line.lstrip()))
+                for line in logout.decode("utf-8").split('\n'):
+                    if "Merged" in line: print(line.lstrip())
                 with open(mlog, 'wb+') as o: o.write(logout)
             else:
                 args1 = [vsearch, '--fastqout', mout,\
@@ -278,7 +267,7 @@ def optimize_trimming(outdir, nbseqs):
         # longer bisect to a new integer
         while found == False:
             bases = int((highval + lowval) / 2)
-            print(highval, lowval, bases)
+            #print(highval, lowval, bases)
             if bases == highval or bases == lowval:
                 # we have gone as far as we can
                 bval = highval
@@ -318,9 +307,8 @@ def optimize_trimming(outdir, nbseqs):
             # log our results in case we want to inspect them
             logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
                     shell=False).communicate()[0][:-1]
-            for line in logout.split(b'\n'):
-                if b"Merged" in line: print(str(bases).encode('utf8') +\
-                    b' ' + line.lstrip())
+            for line in logout.decode("utf-8").split('\n'):
+                if "Merged" in line: print(line.lstrip())
             with open(mlog, 'wb+') as o: o.write(logout)
             results[bases] = os.path.getsize(mout)
             if results[bases] > results[highval]:
@@ -352,12 +340,10 @@ def trim_reads(outdir, nbseqs):
     cutadapt = which("cutadapt")
     if cutadapt == None:
         print(Fore.RED + "ERROR: cutadapt not found.")
-        sys.stdout.write(Style.RESET_ALL)
         sys.exit()
     pigz = which("pigz")
     if pigz == None:
         print(Fore.RED + "ERROR: pigz not found.")
-        sys.stdout.write(Style.RESET_ALL)
         sys.exit()
     merged = get_mfiles(outdir)
     for tout in merged:
@@ -372,8 +358,7 @@ def trim_reads(outdir, nbseqs):
                     args1 = [cutadapt, '--untrimmed-output', mytmp, '-a',
                         '^' + fseq + "..." + rseq + '$', '-o', tfile.name,\
                         tout]
-                    print(Fore.BLUE + "Running cutadapt for: " + tout)
-                    sys.stdout.write(Style.RESET_ALL)
+                    print(Fore.BLUE + Style.BRIGHT + "Running cutadapt for: " + tout)
                     logout = Popen(args1, stdout=PIPE, stderr=STDOUT,\
                         shell=False).communicate()[0][:-1]
                     with open(logs, 'wb+') as o: o.write(logout)

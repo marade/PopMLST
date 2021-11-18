@@ -13,7 +13,8 @@ import pandas as pd
 from colorama import init as cinit
 from colorama import Fore, Back, Style
 
-# edit the paths below as necessary
+cinit(autoreset=True)
+
 version     = "1.0.0"
 
 def do_args():
@@ -27,8 +28,7 @@ def do_args():
     return parser.parse_args()
 
 def filter_columns(infile, outfile):
-    print(Fore.CYAN + "Filtering columns...")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Filtering columns...")
     df = pd.read_csv(infile, sep='\t', index_col=0)
     #print(df.columns)
     #create a dictionary of column names for the first round of filtering
@@ -116,8 +116,7 @@ def main():
     args.outfile = os.path.abspath(args.outfile)
     args.infile = os.path.abspath(args.infile)
     filter_columns(args.infile, args.outfile)
-    print(Fore.CYAN + "Done.")
-    sys.stdout.write(Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Done.")
     return 0
 
 if __name__ == "__main__":
