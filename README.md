@@ -6,8 +6,8 @@ This software has been tested on the Linux operating system. It may be possible 
 #### Bioconda Method (preferred)
 We assume Bioconda is already properly configured and working, per <a href="https://bioconda.github.io/user/install.html">the instuctions</a>.
 
-    $ mamba create -y -n amplicon python=3.8 bioconductor-dada2 vsearch=2.14.0 blast pandas biopython cutadapt pigz colorama
-    $ conda activate amplicon
+    $ conda create -y -n popmlst python=3.8 bioconductor-dada2 vsearch=2.14.0 blast pandas biopython cutadapt pigz colorama
+    $ conda activate popmlst
     $ wget https://github.com/marade/PopMLST/raw/master/tre-python3.tar.gz && tar xzvf tre-python3.tar.gz && cd tre-python3/python3 && python3 setup.py install && cd ../../ && rm -rf tre-python*
 
 #### Manual method
