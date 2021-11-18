@@ -1,5 +1,6 @@
 # Data and methods for <i>PopMLST, a high-resolution method to detect pathogen strain-level diversity in clinical samples.</i>
 ![logo](/title.png)
+The publication for this method is in press, and the citation will appear here shortly.
 ## Guide for Use
 ### Installation - Choose a Method:
 This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. We provide two different installation methods you can use for installation.
