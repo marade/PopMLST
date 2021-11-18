@@ -8,6 +8,7 @@ We assume Bioconda is already properly configured and working, per <a href="http
 
     $ conda create -y -n popmlst python=3.8 bioconductor-dada2 vsearch=2.14.0 blast pandas biopython cutadapt pigz colorama
     $ conda activate popmlst
+    $ sudo apt update && sudo apt install libtre5
     $ wget https://github.com/marade/PopMLST/raw/master/tre-python3.tar.gz && tar xzvf tre-python3.tar.gz && cd tre-python3/python3 && python3 setup.py install && cd ../../ && rm -rf tre-python*
 
 #### Manual method
@@ -42,16 +43,25 @@ This pipeline assumes your paired-end Fastq files are named like so:
     sampleY_1.fastq.gz sampleY_2.fastq.gz
 
 ### Run the Pipeline
-Code blah blah...
+Below are instructions for two simple runs using example data for Pseudomonas aeruginosa and Staphylococcus aureus.
 
     $ git clone https://github.com/marade/PopMLST.git
     $ cd PopMLST
-    $ python3 ProcessAmpliconData PA-fq PA-cutadapt.tab PA-results
+    # run Pseudomonas data
+    $ python3 ProcessAmpliconData data/Pa PA-cutadapt.tab PA-results
     $ Rscript DADA2-PA.R PA-results
     $ python3 ParseDADA2Tabs ./ DADA2-PA out.tab D2-PA-combined.tab
     $ python3 ParseDADA2Tab -f D2-PA-combined.tab PA-ref D2-PA-table.tab D2-PA-blast.tab
     $ python3 FilterDADA2Tab D2-PA-table.filt.tab D2-PA-table.filt2.tab
     $ python3 SortColNames D2-PA-table.filt2.tab D2-PA-table.filt.sorted.tab
     $ python3 ExtractPopMLSTStats PA-fq PA-results PA-stats.tab
+    # run Staph data
+    $ python3 ProcessAmpliconData data/Sa SA-cutadapt.tab SA-results
+    $ Rscript DADA2-SA.R SA-results
+    $ python3 ParseDADA2Tabs ./ DADA2-SA out.tab D2-SA-combined.tab
+    $ python3 ParseDADA2Tab -f D2-SA-combined.tab SA-ref D2-SA-table.tab D2-SA-blast.tab
+    $ python3 FilterDADA2Tab D2-SA-table.filt.tab D2-SA-table.filt2.tab
+    $ python3 SortColNames D2-SA-table.filt2.tab D2-SA-table.filt.sorted.tab
+    $ python3 ExtractPopMLSTStats SA-fq SA-results SA-stats.tab
     
 Other stuff.
