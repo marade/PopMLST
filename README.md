@@ -1,16 +1,16 @@
 # Data and methods for <i>PopMLST, a high-resolution method to detect pathogen strain-level diversity in clinical samples.</i>
 ![logo](/title.png)
-## Guide for Use
-### Installation - Choose a Method:
+### Guide for Use
+## Installation - Choose a Method:
 This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. We provide two different installation methods you can use for installation.
-## Bioconda Method (preferred)
+# Bioconda Method (preferred)
 We assume Bioconda is already properly configured and working.
 
     $ mamba create -y -n amplicon python=3.8 bioconductor-dada2 vsearch=2.14.0 blast pandas biopython cutadapt
     $ conda activate amplicon
     $ wget https://github.com/marade/PopMLST/raw/master/tre-python3.tar.gz && tar xzvf tre-python3.tar.gz && cd tre-python3/python3 && python3 setup.py install && cd ../../ && rm -rf tre-python*
 
-## Manual method
+# Manual method
 The following software dependencies were used for the paper. Other versions may work but have not been tested:
 * Python 3.8.5
 * Python libraries:
@@ -33,15 +33,15 @@ The tre Python library hasn't been formally updated for Python 3.x, but communit
     $ cd tre-python/python3
     $ python3 setup.py install
 
-### Do Sequencing and Generate Fastq Files
+## Do Sequencing and Generate Fastq Files
 We assume you have generated your sequencing data in roughly the manner described in the paper, using Illumina paired-end sequencing. We provide some example files for testing below.
-### Prepare Fastq Files
+## Prepare Fastq Files
 This pipeline assumes your paired-end Fastq files are named like so:
 
     sampleX_1.fastq.gz sampleX_2.fastq.gz
     sampleY_1.fastq.gz sampleY_2.fastq.gz
 
-### Run the Pipeline
+## Run the Pipeline
 Code blah blah...
 
     $ git clone https://github.com/marade/PopMLST.git
