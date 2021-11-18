@@ -54,7 +54,6 @@ Below are instructions for two simple runs using example data for Pseudomonas ae
     $ python3 ParseDADA2Tab -f D2-PA-combined.tab PA-ref D2-PA-table.tab D2-PA-blast.tab
     $ python3 FilterDADA2Tab D2-PA-table.filt.tab D2-PA-table.filt2.tab
     $ python3 SortColNames D2-PA-table.filt2.tab D2-PA-table.filt.sorted.tab
-    $ python3 ExtractPopMLSTStats PA-fq PA-results PA-stats.tab
     # run Staph data
     $ python3 ProcessAmpliconData data/Sa SA-cutadapt.tab SA-results
     $ Rscript DADA2-SA.R SA-results
@@ -62,6 +61,5 @@ Below are instructions for two simple runs using example data for Pseudomonas ae
     $ python3 ParseDADA2Tab -f D2-SA-combined.tab SA-ref D2-SA-table.tab D2-SA-blast.tab
     $ python3 FilterDADA2Tab D2-SA-table.filt.tab D2-SA-table.filt2.tab
     $ python3 SortColNames D2-SA-table.filt2.tab D2-SA-table.filt.sorted.tab
-    $ python3 ExtractPopMLSTStats SA-fq SA-results SA-stats.tab
     
 Other stuff.
