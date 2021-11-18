@@ -1,8 +1,17 @@
 # Data and methods for <i>PopMLST, a high-resolution method to detect pathogen strain-level diversity in clinical samples.</i>
 ![logo](/title.png)
 ## Guide for Use
-### Prerequisites
-This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. The following software dependencies are required:
+### Installation - Choose a Method:
+This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. We provide two different installation methods you can use for installation.
+## Bioconda Method (preferred)
+We assume Bioconda is already properly configured and working.
+
+    $ mamba create -y -n amplicon python=3.8 bioconductor-dada2 vsearch=2.14.0 blast pandas biopython cutadapt
+    $ conda activate amplicon
+    $ wget https://github.com/marade/PopMLST/raw/master/tre-python3.tar.gz && tar xzvf tre-python3.tar.gz && cd tre-python3/python3 && python3 setup.py install && cd ../../ && rm -rf tre-python*
+
+## Manual method
+The following software dependencies were used for the paper. Other versions may work but have not been tested:
 * Python 3.8.5
 * Python libraries:
   * Biopython 1.78
