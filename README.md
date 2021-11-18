@@ -6,7 +6,7 @@ The publication for this method is in press, and the citation will appear here s
 ### Installation - Choose a Method:
 This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. We provide two different installation methods you can use for installation.
 #### Bioconda Method (preferred)
-We assume Bioconda is already properly configured and working, per <a href="https://bioconda.github.io/user/install.html">the instuctions</a>.
+We assume Bioconda is already properly configured and working, per <a href="https://bioconda.github.io/user/install.html">the instructions</a>.
 
     $ conda create -y -n popmlst python=3.8 bioconductor-dada2 vsearch=2.14.0 blast pandas biopython cutadapt pigz colorama
     $ conda activate popmlst
