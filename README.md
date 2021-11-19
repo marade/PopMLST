@@ -8,7 +8,7 @@ This software has been tested on the Ubuntu Linux 20.04 operating system. It may
 #### Bioconda Method (preferred)
 We assume Bioconda is already properly configured and working, per <a href="https://bioconda.github.io/user/install.html">the instructions</a>.
 
-    $ conda create -y -n popmlst python=3.8 bioconductor-dada2 vsearch=2.14.0 blast pandas biopython cutadapt pigz colorama
+    $ conda create -y -n popmlst python=3.8 bioconductor-dada2=1.22.0 vsearch=2.14.0 blast=2.12.0 pandas=1.3.4 biopython=1.79 cutadapt=3.5 pigz=2.6 colorama=0.4.4
     $ conda activate popmlst
     $ sudo apt update && sudo apt install libtre5
     $ wget https://github.com/marade/PopMLST/raw/master/tre-python3.tar.gz && tar xzvf tre-python3.tar.gz && cd tre-python3/python3 && python3 setup.py install && cd ../../ && rm -rf tre-python*
@@ -17,15 +17,15 @@ We assume Bioconda is already properly configured and working, per <a href="http
 The following software dependencies were used for the paper. Other versions may work but have not been tested:
 * Python 3.8.5
 * Python libraries:
-  * Biopython 1.78
-  * Pandas 1.2.5
-  * colorama 0.4.3
+  * Biopython 1.79
+  * Pandas 1.3.4
+  * colorama 0.4.4
   * tre 0.8.0 (see below)
-* Cutadapt 3.2
-* VSEARCH 2.15.2
-* pigz 2.4
-* R 4.0.4
-* DADA2 1.18.0
+* Cutadapt 3.5
+* VSEARCH 2.14.0
+* pigz 2.6
+* R 4.1.1
+* DADA2 1.22.0
 
 These are the versions used for the paper, though other versions may work.
 
