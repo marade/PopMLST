@@ -15,7 +15,7 @@ We assume Bioconda is already properly configured and working, per <a href="http
 
 #### Manual method
 The following software dependencies were used for the paper. Other versions may work but have not been tested:
-* Python 3.8.5
+* Python 3.8.12
 * Python libraries:
   * Biopython 1.79
   * Pandas 1.3.4
@@ -49,6 +49,7 @@ Below are instructions for two simple runs using example data for Pseudomonas ae
 
     $ git clone https://github.com/marade/PopMLST.git
     $ cd PopMLST
+    
     # run Pseudomonas data
     $ python3 ProcessAmpliconData data/Pa PA-cutadapt.tab PA-results
     $ Rscript DADA2-PA.R PA-results
@@ -56,6 +57,7 @@ Below are instructions for two simple runs using example data for Pseudomonas ae
     $ python3 ParseDADA2Tab -f D2-PA-combined.tab PA-ref D2-PA-table.tab D2-PA-blast.tab
     $ python3 FilterDADA2Tab D2-PA-table.filt.tab D2-PA-table.filt2.tab
     $ python3 SortColNames D2-PA-table.filt2.tab D2-PA-table.filt.sorted.tab
+    
     # run Staph data
     $ python3 ProcessAmpliconData data/Sa SA-cutadapt.tab SA-results
     $ Rscript DADA2-SA.R SA-results
