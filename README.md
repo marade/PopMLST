@@ -4,7 +4,7 @@
 The publication for this method is in press, and the citation will appear here shortly.
 ## Guide for Use
 ### Installation - Choose a Method:
-This software has been tested on the Linux operating system. It may be possible to adapt it for other operating systems. We provide two different installation methods you can use for installation.
+This software has been tested on the Ubuntu Linux 20.04 operating system. It may be possible to adapt it for other operating systems. We provide two different methods you can use for installation.
 #### Bioconda Method (preferred)
 We assume Bioconda is already properly configured and working, per <a href="https://bioconda.github.io/user/install.html">the instructions</a>.
 
