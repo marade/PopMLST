@@ -20,7 +20,7 @@ d <- data.frame(
 
 for(i in seq_len(nrow(d))) {
     message(paste("====", d[i,1], "===="))
-    output <- paste0("DADA2-PA-", d[i,1], "-out.tab")
+    output <- paste0("DADA2-SA-", d[i,1], "-out.tab")
     ddspath <- paste0(d[i,1], "-dds.rds")
     rdspath <- paste0(d[i,1], "-seqtab.rds")
     fns <- list.files(path, pattern=paste0("_", d[i,1], ".merged.fastq.gz"))
